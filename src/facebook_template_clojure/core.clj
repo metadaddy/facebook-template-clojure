@@ -1,23 +1,19 @@
 (ns facebook-template-clojure.core
-  (:use [clojure.pprint :only [pprint]]
-        [clojure.data.json :only [read-json]] 
+  (:use [clojure.data.json :only [read-json]] 
         [compojure.core :only [defroutes GET POST]]
         [ring.middleware.session :only [wrap-session]]
         [ring.middleware.params :only [wrap-params]]
         [ring.util.response :only [redirect]]
         [ring.middleware.stacktrace :only [wrap-stacktrace-web]]
-        [ring.middleware.session.memory :only [memory-store]]
         [ring.handler.dump :only [handle-dump]]
         [clj-facebook-graph.auth :only [with-facebook-auth with-facebook-access-token make-auth-request *facebook-auth*]]
         [clj-facebook-graph.helper :only [facebook-base-url]]
         [clj-facebook-graph.ring-middleware :only [wrap-facebook-access-token-required
                                                    wrap-facebook-extract-callback-code
-                                                   wrap-facebook-auth]]
-        hiccup.core
-        ring.adapter.jetty)
+                                                   wrap-facebook-auth]])
   (:require [ring.adapter.jetty :as jetty]
             [compojure.route :as route]
-            [net.cgrand.enlive-html :as html]
+            [net.cgrand.enlive-html :as enlive]
             [clj-http.client :as http-client]
             [clj-facebook-graph.helper :as fb-helper]
             [clj-facebook-graph.client :as fb-client])
@@ -27,76 +23,77 @@
 (defonce facebook-app-info {:client-id (System/getenv "FACEBOOK_APP_ID")
                             :client-secret (System/getenv "FACEBOOK_SECRET")
                             :redirect-uri (System/getenv "REDIRECT_URI")
-                            :scope  ["user_photos" "friends_photos" "publish_stream"]})
+                            :scope  ["user_likes" "user_photos" "user_photo_video_tags"]})
 
-(html/defsnippet myfriends-model "templates/index.html" [:ul#myfriends :> html/first-child]
+(enlive/defsnippet myfriends-model "templates/index.html" [:ul#myfriends :> enlive/first-child]
   [{name :name id :id}]
-  [:a] (html/set-attr :onclick (str "window.open('http://www.facebook.com/" id "')"))
-  [:a :> :img] (html/do->
-          (html/set-attr :alt name)
-          (html/set-attr :src (str "https://graph.facebook.com/" id "/picture?type=square"))
-          (html/after name)))
+  [:a] (enlive/set-attr :onclick (str "window.open('http://www.facebook.com/" id "')"))
+  [:a :> :img] (enlive/do->
+          (enlive/set-attr :alt name)
+          (enlive/set-attr :src (str "https://graph.facebook.com/" id "/picture?type=square"))
+          (enlive/after name)))
 
-(html/defsnippet likes-model "templates/index.html" [:ul.things :> html/first-child]
+(enlive/defsnippet likes-model "templates/index.html" [:ul.things :> enlive/first-child]
   [{name :name id :id}]
-  [:a] (html/set-attr :onclick (str "window.open('http://www.facebook.com/" id "')"))
-  [:a :> :img] (html/do->
-          (html/set-attr :alt name)
-          (html/set-attr :src (str "https://graph.facebook.com/" id "/picture?type=square"))
-          (html/after name)))
+  [:a] (enlive/set-attr :onclick (str "window.open('http://www.facebook.com/" id "')"))
+  [:a :> :img] (enlive/do->
+          (enlive/set-attr :alt name)
+          (enlive/set-attr :src (str "https://graph.facebook.com/" id "/picture?type=square"))
+          (enlive/after name)))
 
-(html/defsnippet photos-model "templates/index.html" [:ul.photos :> html/first-child]
+(enlive/defsnippet photos-model "templates/index.html" [:ul.photos :> enlive/first-child]
   [{picture :picture name :name id :id}]
-  [:li] (html/set-attr :style (str "background-image: url(" picture ")"))
-  [:li :> :a] (html/do->
-          (html/set-attr :onclick (str "window.open('http://www.facebook.com/" id "')"))
-          (html/content name)))
+  [:li] (enlive/set-attr :style (str "background-image: url(" picture ")"))
+  [:li :> :a] (enlive/do->
+          (enlive/set-attr :onclick (str "window.open('http://www.facebook.com/" id "')"))
+          (enlive/content name)))
 
-(html/defsnippet appfriends-model "templates/index.html" [:ul#appfriends :> html/first-child]
+(enlive/defsnippet appfriends-model "templates/index.html" [:ul#appfriends :> enlive/first-child]
   [{pic_square :pic_square name :name uid :uid}]
-  [:a] (html/set-attr :onclick (str "window.open('http://www.facebook.com/" uid "')"))
-  [:a :> :img] (html/do->
-          (html/set-attr :alt name)
-          (html/set-attr :src pic_square)
-          (html/after name)))
+  [:a] (enlive/set-attr :onclick (str "window.open('http://www.facebook.com/" uid "')"))
+  [:a :> :img] (enlive/do->
+          (enlive/set-attr :alt name)
+          (enlive/set-attr :src pic_square)
+          (enlive/after name)))
 
-(html/deftemplate index "templates/index.html"
+(enlive/deftemplate index "templates/index.html"
     [host app & [user friends photos likes appfriends]]
-    [:title] (html/content (:name app))
+    [:title] (enlive/content (:name app))
     [(and 
-      (html/has [:meta]) 
-      (html/attr-has :property "og:url"))] (html/set-attr :content (str "https://" host "/"))
+      (enlive/has [:meta]) 
+      (enlive/attr-has :property "og:url"))] (enlive/set-attr :content (str "https://" host "/"))
     [(and 
-      (html/has [:meta]) 
-      (html/attr-has :property "og:image"))] (html/set-attr :content (str "https://" host "/logo.png"))
+      (enlive/has [:meta]) 
+      (enlive/attr-has :property "og:image"))] (enlive/set-attr :content (str "https://" host "/logo.png"))
     [(and 
-      (html/has [:meta]) 
-      (html/attr-has :property "og:title"))] (html/set-attr :content (:name app))
+      (enlive/has [:meta]) 
+      (enlive/attr-has :property "og:title"))] (enlive/set-attr :content (:name app))
     [(and 
-      (html/has [:meta]) 
-      (html/attr-has :property "og:site_name"))] (html/set-attr :content (:name app))
+      (enlive/has [:meta]) 
+      (enlive/attr-has :property "og:site_name"))] (enlive/set-attr :content (:name app))
     [(and 
-      (html/has [:meta]) 
-      (html/attr-has :property "fb:app_id"))] (html/set-attr :content (:id app))
-    [:div.no-user (html/pred (fn [node] (not= user nil)))] nil
-    [:div.user-logged-in (html/pred (fn [node] (= user nil)))] nil
-    [:strong#username] (html/content (:name user))
-    [:p#picture] (html/set-attr :style (str "background-image: url(https://graph.facebook.com/" (:id user) "/picture?type=normal)"))
-    [:a#postToWall] (html/set-attr :data-url (str "https://" host "/"))
-    [:a#sendToFriends] (html/set-attr :data-url (str "https://" host "/"))
-    [:a#applink] (html/do->
-                    (html/content (:name app))
-                    (html/set-attr :href (:link app)))
-    [:ul#myfriends] (html/content (map myfriends-model friends))
-    [:ul.photos] (html/content (map photos-model photos))
-    [:ul.photos :> (html/nth-child 4 1)] (html/add-class "first-column")
-    [:ul#appfriends] (html/content (map appfriends-model appfriends))
-    [:ul.things] (html/content (map likes-model likes)))
+      (enlive/has [:meta]) 
+      (enlive/attr-has :property "fb:app_id"))] (enlive/set-attr :content (:id app))
+    [:div.no-user (enlive/pred (fn [node] (not= user nil)))] nil
+    [:div.user-logged-in (enlive/pred (fn [node] (= user nil)))] nil
+    [:strong#username] (enlive/content (:name user))
+    [:p#picture] (enlive/set-attr :style (str "background-image: url(https://graph.facebook.com/" (:id user) "/picture?type=normal)"))
+    [:a#postToWall] (enlive/set-attr :data-url (str "https://" host "/"))
+    [:a#sendToFriends] (enlive/set-attr :data-url (str "https://" host "/"))
+    [:a#applink] (enlive/do->
+                    (enlive/content (:name app))
+                    (enlive/set-attr :href (:link app)))
+    [:ul#myfriends] (enlive/content (map myfriends-model friends))
+    [:ul.photos] (enlive/content (map photos-model photos))
+    [:ul.photos :> (enlive/nth-child 4 1)] (enlive/add-class "first-column")
+    [:ul#appfriends] (enlive/content (map appfriends-model appfriends))
+    [:ul.things] (enlive/content (map likes-model likes)))
 
 (defn render 
     "Helper function for rendering Enlive output"
     [t] (apply str t))
-    
+
+;; Can get application data from Facebook without an access token
 (def app-details 
   (read-json 
     (:body 
@@ -106,7 +103,6 @@
 (defroutes handler
   (GET "/" {headers :headers} 
        (if (not *facebook-auth*)
-         ;; fb-client doesn't like getting app info without the access token
          (render (index (get headers "host") app-details))
          (let [app (fb-client/get [:app] {:extract :body})
                user (fb-client/get [:me] {:extract :body})
@@ -120,8 +116,7 @@
       (throw
        (FacebookGraphException.
         {:error :facebook-login-required}))
-      {:status 302
-       :headers {"Location" "/"}}))
+      redirect "/"))
   (GET "/show-session" {session :session} (str session))
   (route/files "/" {:root "www/public"})
   (route/not-found "Page not found"))
