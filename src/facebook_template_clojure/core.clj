@@ -94,7 +94,7 @@
     [t] (apply str t))
 
 ;; Can get application data from Facebook without an access token
-(def app 
+(defn app []
   (read-json 
     (:body 
       (http-client/get 
@@ -103,13 +103,13 @@
 (defroutes handler
   (GET "/" {headers :headers} 
        (if (not *facebook-auth*)
-         (render (index (get headers "host") app))
+         (render (index (get headers "host") (app)))
          (let [user (fb-client/get [:me] {:extract :body})
                friends (fb-client/get [:me :friends] {:query-params {:limit 4} :extract :data})
                photos (fb-client/get [:me :photos] {:query-params {:limit 16} :extract :data})
                likes (fb-client/get [:me :likes] {:query-params {:limit 4} :extract :data})
                appfriends (:body (fb-client/get :fql {:fql "SELECT uid, name, is_app_user, pic_square FROM user WHERE uid in (SELECT uid2 FROM friend WHERE uid1 = me()) AND is_app_user = 1"}))]
-              (render (index (get headers "host") app user friends photos likes appfriends)))))
+              (render (index (get headers "host") (app) user friends photos likes appfriends)))))
   (GET "/auth/facebook" [] 
     (if (not *facebook-auth*)
       (throw
