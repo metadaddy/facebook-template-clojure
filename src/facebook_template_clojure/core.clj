@@ -116,7 +116,7 @@
       (throw
        (FacebookGraphException.
         {:error :facebook-login-required}))
-      redirect "/"))
+      (redirect "/")))
   (GET "/show-session" {session :session} (str session))
   (route/files "/" {:root "www/public"})
   (route/not-found "Page not found"))
