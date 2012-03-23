@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html xmlns:fb="http://ogp.me/ns/fb#" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes" />
+
+    <title>Application Name</title>
+    <link rel="stylesheet" href="stylesheets/screen.css" media="Screen" type="text/css" />
+    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-width: 480px), only screen and (max-device-width: 480px)" type="text/css" />
+
+    <!--[if IEMobile]>
+    <link rel="stylesheet" href="mobile.css" media="screen" type="text/css"  />
+    <![endif]-->
+
+    <!-- These are Open Graph tags.  They add meta data to your  -->
+    <!-- site that facebook uses when your content is shared     -->
+    <!-- over facebook.  You should fill these tags in with      -->
+    <!-- your data.  To learn more about Open Graph, visit       -->
+    <!-- 'https://developers.facebook.com/docs/opengraph/'       -->
+    <meta property="og:title" content="Application Name" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="Application URL" />
+    <meta property="og:image" content="Application Logo URL" />
+    <meta property="og:site_name" content="Application Name" />
+    <meta property="og:description" content="My First App" />
+    <meta property="fb:app_id" content="Application Name" />
+
+    <script type="text/javascript" src="/javascripts/jquery-1.7.1.min.js"></script>
+
+    <script type="text/javascript">
+      function logResponse(response) {
+        if (console && console.log) {
+          console.log('The response was', response);
+        }
+      }
+
+      $(function(){
+        // Set up so we handle click on the buttons
+        $('#postToWall').click(function() {
+          FB.ui(
+            {
+              method : 'feed',
+              link   : $(this).attr('data-url')
+            },
+            function (response) {
+              // If response is null the user canceled the dialog
+              if (response != null) {
+                logResponse(response);
+              }
+            }
+          );
+        });
+
+        $('#sendToFriends').click(function() {
+          FB.ui(
+            {
+              method : 'send',
+              link   : $(this).attr('data-url')
+            },
+            function (response) {
+              // If response is null the user canceled the dialog
+              if (response != null) {
+                logResponse(response);
+              }
+            }
+          );
+        });
+
+        $('#sendRequest').click(function() {
+          FB.ui(
+            {
+              method  : 'apprequests',
+              message : $(this).attr('data-message')
+            },
+            function (response) {
+              // If response is null the user canceled the dialog
+              if (response != null) {
+                logResponse(response);
+              }
+            }
+          );
+        });
+      });
+    </script>
+
+    <!--[if IE]>
+      <script type="text/javascript">
+        var tags = ['header', 'section'];
+        while(tags.length)
+          document.createElement(tags.pop());
+      </script>
+    <![endif]-->
+  </head>
+  <body>
+    <div id="fb-root"></div>
+    <script type="text/javascript">
+      window.fbAsyncInit = function() {
+        function getAppId(){
+          var m = document.getElementsByTagName('meta');
+          for (var i = 0; i < m.length; i++){
+            if(m[i].getAttribute("property") === "fb:app_id"){
+              return m[i].content;
+            }
+          }
+        }
+        
+        FB.init({
+          appId      : getAppId(),                            // App ID
+          channelUrl : "/" + location.host + "/channel.html", // Channel File
+          status     : true,                                  // check login status
+          cookie     : true,                                  // enable cookies to allow the server to access the session
+          xfbml      : true                                   // parse XFBML
+        });
+
+        // Listen to the auth.login which will be called when the user logs in
+        // using the Login button
+        FB.Event.subscribe('auth.login', function(response) {
+          // We want to reload the page now so Ruby can read the cookie that the
+          // Javascript SDK sat. But we don't want to use
+          // window.location.reload() because if this is in a canvas there was a
+          // post made to this page and a reload will trigger a message to the
+          // user asking if they want to send data again.
+          window.location = window.location;
+        });
+
+        FB.Canvas.setAutoGrow();
+      };
+
+      // Load the SDK Asynchronously
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/en_US/all.js";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    </script>
+
+    <header class="clearfix">
+      <div class="user-logged-in">
+          <p id="picture" style="background-image: url(https://graph.facebook.com/userid/picture?type=normal)"></p>
+          <div>
+            <h1>Welcome, <strong id="username">User Name</strong></h1>
+            <p class="tagline">
+              This is your app
+              <a id="applink" href="Application URL">Application Name</a>
+            </p>
+            <div id="share-app">
+              <p>Share your app:</p>
+              <ul>
+                <li>
+                  <a href="#" class="facebook-button" id="postToWall" data-url="URL">
+                    <span class="plus">Post to Wall</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" class="facebook-button speech-bubble" id="sendToFriends" data-url="URL">
+                    <span class="speech-bubble">Send Message</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" class="facebook-button apprequests" id="sendRequest" data-message="Test this awesome app">
+                    <span class="apprequests">Send Requests</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+      </div>
+      <div class="no-user">
+        <h1>Welcome</h1>
+          <a href='/auth/facebook' class="fb_button fb_button_medium">
+            <span class="fb_button_text">Log In</span>
+          </a>
+      </div>
+    </header>
+
+    <section id="get-started">
+      <p>Welcome to your Facebook app, running on <span>heroku</span>!</p>
+      <a href="https://devcenter.heroku.com/articles/facebook?utm_source=facebook&utm_medium=app&utm_campaign=fb_integration" target="_top" class="button">Learn How to Edit This App</a>
+    </section>
+
+
+    <div class="user-logged-in">
+      <section id="samples" class="clearfix">
+        <h1>Examples of the Facebook Graph API</h1>
+
+        <div class="list">
+          <h3>A few of your friends</h3>
+          <ul id="myfriends" class="friends">
+            <li>
+              <a href="#" onclick="window.open('http://www.facebook.com/friendid')">
+                <img src="https://graph.facebook.com/friendid/picture?type=square" alt="Friend Name"/>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="list inline">
+          <h3>Recent photos</h3>
+          <ul class="photos">
+            <li style="background-image: url(Photo URL)">
+              <a href="#" onclick="window.open('http://www.facebook.com/photoid')">
+                Photo Name
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="list">
+          <h3>Things you like</h3>
+          <ul class="things">
+            <li>
+              <a href="#" onclick="window.open('http://www.facebook.com/likeid')">
+                <img src="https://graph.facebook.com/likeid/picture?type=square" alt="Like Name"/>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="list">
+          <h3>Friends using this app</h3>
+          <ul id="appfriends" class="friends">
+            <li>
+              <a href="#" onclick="window.open('http://www.facebook.com/friendid')">
+                <img src="friendpic" alt="Friend Name">
+              </a>
+            </li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <section id="guides" class="clearfix">
+      <h1>Learn More About Heroku &amp; Facebook Apps</h1>
+      <ul>
+        <li>
+          <a href="https://www.heroku.com/?utm_source=facebook&utm_medium=app&utm_campaign=fb_integration" target="_top" class="icon heroku">Heroku</a>
+          <p>Learn more about <a href="https://www.heroku.com/?utm_source=facebook&utm_medium=app&utm_campaign=fb_integration" target="_top">Heroku</a>, or read developer docs in the Heroku <a href="https://devcenter.heroku.com/" target="_top">Dev Center</a>.</p>
+        </li>
+        <li>
+          <a href="https://developers.facebook.com/docs/guides/web/" target="_top" class="icon websites">Websites</a>
+          <p>
+            Drive growth and engagement on your site with
+            Facebook Login and Social Plugins.
+          </p>
+        </li>
+        <li>
+          <a href="https://developers.facebook.com/docs/guides/mobile/" target="_top" class="icon mobile-apps">Mobile Apps</a>
+          <p>
+            Integrate with our core experience by building apps
+            that operate within Facebook.
+          </p>
+        </li>
+        <li>
+          <a href="https://developers.facebook.com/docs/guides/canvas/" target="_top" class="icon apps-on-facebook">Apps on Facebook</a>
+          <p>Let users find and connect to their friends in mobile apps and games.</p>
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>

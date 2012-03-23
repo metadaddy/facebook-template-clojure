@@ -1,0 +1,7 @@
+build
+classes
+lib
+.DS_Store
+.lein-deps-sum
+vars.sh
+localvars.sh
