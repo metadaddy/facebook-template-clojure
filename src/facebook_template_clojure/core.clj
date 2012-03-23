@@ -26,7 +26,7 @@
 
 (defonce facebook-app-info {:client-id (System/getenv "FACEBOOK_APP_ID")
                             :client-secret (System/getenv "FACEBOOK_SECRET")
-                            :redirect-uri "http://localhost:8080/facebook-callback" ;; TODO
+                            :redirect-uri (System/getenv "REDIRECT_URI")
                             :scope  ["user_photos" "friends_photos" "publish_stream"]})
 
 (html/defsnippet myfriends-model "templates/index.html" [:ul#myfriends :> html/first-child]
