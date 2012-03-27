@@ -1,7 +1,7 @@
 Facebook/Heroku sample app -- Clojure
 =====================================
 
-This is a sample app showing use of the Facebook Graph API, written in Clojure, designed for deployment to [Heroku](http://www.heroku.com/).
+This is a sample app showing use of the Facebook Graph API, written in Clojure, designed for deployment to [Heroku](http://www.heroku.com/). You can see the sample running at https://facebook-template-clojure.herokuapp.com/.
 
 Run locally
 -----------
